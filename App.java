@@ -12,7 +12,7 @@ class Player extends Thread{
 		while(App.getplayerRunning()){
 			try {
 				Random rand = new Random();
-				int randomNum = rand.nextInt(100);
+				int randomNum = rand.nextInt(3500);
 				Thread.sleep(randomNum);
 			}
 			catch (Exception e) {
@@ -22,8 +22,7 @@ class Player extends Thread{
 	findChair();
 	}
 
-	public  synchronized void findChair(){
-		
+	public synchronized void findChair(){
 			if(getAvailableChairs()!=0) {
 				sitDown();
 				decrement();
@@ -34,115 +33,98 @@ class Player extends Thread{
 		
 	}
 
-	public synchronized void decrement() {
+	public void decrement() {
 		if(App.availableChairs == 0) {
 			eliminated();
 		}
 		else
-			App.availableChairs--;
+			App.decChairs();
 	}
 
-	public synchronized int getAvailableChairs(){
-		return App.availableChairs;
+	public int getAvailableChairs(){
+		return App.getavailableChairs();
 	}
 
-	public void sitDown(){
-		if(App.availableChairs > 0)
-			System.out.println(myId + " sat down");
+	public synchronized void sitDown(){
+		App.satDown++;
+		if(App.availableChairs > 0 && App.satDown < (App.people-1)) {
+			System.out.print("P"+myId +", ");
+		}
+		else if(App.availableChairs > 0 && App.satDown < App.people) {
+			System.out.print("P"+myId);
+		}
 	}
 	public void eliminated(){
-		System.out.println(myId + " could not find an available chair\n\n\n");
+		App.people--;
+		App.satDown = 0;
+		System.out.println("]");
+		System.out.println("P"+myId + " could not find an available chair\n\n");
 		App.stillStanding.remove(new Integer(myId));
 		App.initializeMusic(App.stillStanding);
 	}
 	public int getMyId(){
 		return this.myId;
 	}
-
-}
-
-class Runner extends Thread {
-	boolean running = true;
-	public void run() {
-		while(running){
-			//System.out.println("music playing...... ");
-			try {
-				Thread.sleep(1);
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}	
-		}
-	}
-	public void stopMusic(){
-		running = false;
-	}
 }
 
 public class App {
+	static int satDown;
 	static int id;
 	static int chairNumber;
 	static int seatNumber;
 	static boolean playerRunning = true;
 	static int availableChairs;
 	static ArrayList<Integer> stillStanding = new ArrayList<Integer>();
+	static int people;
 	public static void main(String args[]) {
-		
 		if (args.length < 1 ) {
-			System.out.println("Enter number of participants");
-			return;
+			for (int i = 0; i < 10; i++) {
+				stillStanding.add(i);
+			}
+			people = 10;
+			initializeMusic(stillStanding);
 		}
 		else {
-			int people = Integer.parseInt(args[0]);
+			people = Integer.parseInt(args[0]);
 			if(people < 2){ 
 				System.out.println("Need more than one");
 				return;
 			}
-			else
+			else {
 				for(int i = 0; i<people; i++) {
 					stillStanding.add(i);
 				}
 				initializeMusic(stillStanding);
+			}
 		}
 	}
 	public static void initializeMusic(ArrayList x) {
 		if(x.size()>1){
 			setplayerRunning(true);
 			availableChairs = (x.size()-1);
-			System.out.println(availableChairs + " remaining");
+			if(availableChairs > 1)
+				System.out.println(availableChairs + " chairs remaining");
+			else
+				System.out.println(availableChairs + " chair remaining");
+			System.out.print("Found seats: [");
 			int k = 0;
 			for(int i = 0; i< x.size(); i++){
 				int myValue = (int)x.get(i);
 				new Player(myValue);
 			}
-			Runner runner = new Runner();
-			runner.start();
-			try{
-				Thread.sleep(150);
-			}
-			catch (Exception e){
-				e.printStackTrace();
-			}
-
 			setplayerRunning(false);
-			runner.stopMusic();
-			try{
-				Thread.sleep(150);
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
 		}
 		else{
-			System.out.println(x.get(0) + " is the winner");
+			System.out.println("P"+x.get(0) + " is the winner");
 			return;
 		}
 	}
-	//synchronized (this) {
-		public static int getavailableChairs(){
-			return availableChairs;
-		}
-	//}
+	public synchronized static int getavailableChairs(){
+		return availableChairs;
+	}
+	public synchronized static int decChairs() {
+		return availableChairs--;
+	}
 	public static int getId() {
 		return id;
 	}
@@ -150,20 +132,6 @@ public class App {
 	public static void  setId() {
 		 id++;
 	}
-//	public static int getseatNumber() {
-//		return seatNumber;
-//	}
-
-//	public static void setseatNumber() {
-//		 seatNumber++;
-//	}
-//	public static int getchairNumber() {
-//		return chairNumber;
-//	}
-
-//	public static void setchairNumber() {
-//		 chairNumber++;
-//	}
 	public static boolean getplayerRunning() {
 		return playerRunning;
 	}
